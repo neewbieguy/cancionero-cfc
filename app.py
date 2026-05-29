@@ -23,7 +23,7 @@ def cargar_datos():
 
 df = cargar_datos()
 
-# 3. Lógica para cambiar los acordes automáticamente (CORREGIDA E INFALIBLE)
+# 3. Lógica para cambiar los acordes automáticamente
 NOTAS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
 def transponer_texto(texto, semitonos):
@@ -33,7 +33,6 @@ def transponer_texto(texto, semitonos):
     def reemplazar_acorde(match):
         acorde = match.group(1)
         
-        # Determinar si la nota base tiene sostenido o bemol
         if len(acorde) > 1 and acorde[1] in ["#", "b"]:
             nota_base = acorde[:2]
         else:
@@ -53,7 +52,6 @@ def transponer_texto(texto, semitonos):
             return f"**[{NOTAS[idx]}{modificador}]**"
         return f"**[{acorde}]**"
 
-    # Busca todo lo que esté entre corchetes [ ] de forma segura
     resultado = re.sub(r'\[([^\]]+)\]', reemplazar_acorde, texto)
     return str(resultado)
 
@@ -79,28 +77,36 @@ if not df_filtrado.empty:
     canciones = df_filtrado['Titulo'].dropna().tolist()
     seleccion = st.selectbox("📖 Elegí una canción:", canciones)
     
-    datos_cancion = df_filtrado[df_filtrado['Titulo'] == seleccion].iloc[0]
+    # --- LA CORRECCIÓN CLAVE ESTÁ ACÁ ---
+    # Filtramos la fila exacta de la canción elegida y extraemos el primer resultado con .iloc[0]
+    fila_cancion = df_filtrado[df_filtrado['Titulo'] == seleccion]
     
-    st.subheader(f"{datos_cancion['Titulo']}")
-    st.caption(f"Autor: {datos_cancion['Autor'] if pd.notna(datos_cancion['Autor']) else 'Desconocido'}")
-    
-    # Selector de cambio de tono (-6 a +6 semitonos)
-    cambio = st.slider("🎼 Cambiar Tono (Semitonos):", min_value=-6, max_value=6, value=0, step=1)
-    
-    # Conseguir la letra y validar
-    letra_lista = datos_cancion['Letra'] if 'Letra' in datos_cancion else ""
-    
-    if pd.isna(letra_lista) or str(letra_lista).strip() == "" or str(letra_lista).strip() == "nan":
-        st.warning("⚠️ Esta canción todavía no tiene la letra cargada en el Excel.")
+    if not fila_cancion.empty:
+        datos_cancion = fila_cancion.iloc[0]
+        
+        titulo_cancion = str(datos_cancion['Titulo'])
+        autor_cancion = str(datos_cancion['Autor']) if pd.notna(datos_cancion['Autor']) else 'Desconocido'
+        letra_lista = datos_cancion['Letra'] if 'Letra' in datos_cancion else ""
+        
+        st.subheader(titulo_cancion)
+        st.caption(f"Autor: {autor_cancion}")
+        
+        # Selector de cambio de tono (-6 a +6 semitonos)
+        cambio = st.slider("🎼 Cambiar Tono (Semitonos):", min_value=-6, max_value=6, value=0, step=1)
+        
+        if pd.isna(letra_lista) or str(letra_lista).strip() == "" or str(letra_lista).strip() == "nan":
+            st.warning("⚠️ Esta canción todavía no tiene la letra cargada en el Excel.")
+        else:
+            letra_texto = str(letra_lista)
+            
+            # Cambiamos los acordes de tono automáticamente
+            letra_transpuesta = transponer_texto(letra_texto, cambio)
+            
+            # Formatear saltos de línea para la pantalla
+            letra_final = letra_transpuesta.replace("\n", "<br>")
+            st.markdown(f"<div style='font-size:18px; line-height:1.8; font-family: sans-serif;'>{letra_final}</div>", unsafe_allowed_html=True)
     else:
-        letra_texto = str(letra_lista)
-        
-        # Cambiamos los acordes de tono automáticamente
-        letra_transpuesta = transponer_texto(letra_texto, cambio)
-        
-        # Forzar a que siempre sea un string antes del replace para que no falle
-        letra_final = str(letra_transpuesta).replace("\n", "<br>")
-        st.markdown(f"<div style='font-size:18px; line-height:1.8; font-family: sans-serif;'>{letra_final}</div>", unsafe_allowed_html=True)
+        st.error("Error al cargar los datos de la canción elegida.")
 else:
     if not df.empty:
         st.warning("No se encontraron canciones con ese nombre.")
