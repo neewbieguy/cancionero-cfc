@@ -6,7 +6,7 @@ import re
 st.set_page_config(page_title="Cancionero Iglesia", page_icon="🎵", layout="centered")
 
 # 2. Conectar con tu Google Sheets
-SHEET_URL = "https://google.com"
+SHEET_URL = "https://docs.google.com/spreadsheets/d/1j-VAdu7VTkeIGMY4d8Fa1ahlfjeMmg9rZkglWjG9an0/export?format=csv"
 
 @st.cache_data(ttl=60) # Se actualiza solo cada 1 minuto si agregás canciones
 def cargar_datos():
