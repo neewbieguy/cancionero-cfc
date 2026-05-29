@@ -77,16 +77,17 @@ if not df_filtrado.empty:
     canciones = df_filtrado['Titulo'].dropna().tolist()
     seleccion = st.selectbox("📖 Elegí una canción:", canciones)
     
-    # --- LA CORRECCIÓN CLAVE ESTÁ ACÁ ---
-    # Filtramos la fila exacta de la canción elegida y extraemos el primer resultado con .iloc[0]
-    fila_cancion = df_filtrado[df_filtrado['Titulo'] == seleccion]
+    # FORMA INFALIBLE: Filtramos y extraemos los textos directo como strings puros
+    fila_especifica = df_filtrado[df_filtrado['Titulo'] == seleccion]
     
-    if not fila_cancion.empty:
-        datos_cancion = fila_cancion.iloc[0]
+    if not fila_especifica.empty:
+        # Extraemos los valores de las celdas directamente sin usar iloc
+        titulo_cancion = str(fila_especifica['Titulo'].values[0])
         
-        titulo_cancion = str(datos_cancion['Titulo'])
-        autor_cancion = str(datos_cancion['Autor']) if pd.notna(datos_cancion['Autor']) else 'Desconocido'
-        letra_lista = datos_cancion['Letra'] if 'Letra' in datos_cancion else ""
+        autor_val = fila_especifica['Autor'].values[0]
+        autor_cancion = str(autor_val) if pd.notna(autor_val) else 'Desconocido'
+        
+        letra_val = fila_especifica['Letra'].values[0] if 'Letra' in fila_especifica.columns else ""
         
         st.subheader(titulo_cancion)
         st.caption(f"Autor: {autor_cancion}")
@@ -94,10 +95,10 @@ if not df_filtrado.empty:
         # Selector de cambio de tono (-6 a +6 semitonos)
         cambio = st.slider("🎼 Cambiar Tono (Semitonos):", min_value=-6, max_value=6, value=0, step=1)
         
-        if pd.isna(letra_lista) or str(letra_lista).strip() == "" or str(letra_lista).strip() == "nan":
+        if pd.isna(letra_val) or str(letra_val).strip() == "" or str(letra_val).strip() == "nan":
             st.warning("⚠️ Esta canción todavía no tiene la letra cargada en el Excel.")
         else:
-            letra_texto = str(letra_lista)
+            letra_texto = str(letra_val)
             
             # Cambiamos los acordes de tono automáticamente
             letra_transpuesta = transponer_texto(letra_texto, cambio)
